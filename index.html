@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>幻冬社ルネッサンス編集局サイト</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="default-data.js"></script>
+<style>
+  :root{
+    --primary:#3a2e2a;
+    --on-primary:#f5efe8;
+    --secondary:#c9a857;
+    --on-secondary:#1a1a1a;
+    --accent-yellow:#f5d56e;
+    --surface:#fbf8f3;
+    --surface-container-low:#f4efe6;
+    --surface-container:#ebe4d6;
+    --outline-variant:#d8cdb8;
+    --on-surface:#2a2520;
+    --on-surface-variant:#6b6358;
+    --error:#b3261e;
+  }
+  html,body{background:var(--surface);color:var(--on-surface);font-family:"Hiragino Sans","Yu Gothic","Meiryo","Helvetica Neue",sans-serif;}
+  .bg-primary{background-color:var(--primary);}
+  .text-on-primary{color:var(--on-primary);}
+  .bg-secondary{background-color:var(--secondary);}
+  .text-on-secondary{color:var(--on-secondary);}
+  .bg-accent-yellow{background-color:var(--accent-yellow);}
+  .bg-surface{background-color:var(--surface);}
+  .bg-surface-container-low{background-color:var(--surface-container-low);}
+  .bg-surface-container{background-color:var(--surface-container);}
+  .border-outline-variant{border-color:var(--outline-variant);}
+  .text-on-surface-variant{color:var(--on-surface-variant);}
+  .text-error{color:var(--error);}
+  .text-primary{color:var(--primary);}
+  .text-secondary{color:var(--secondary);}
+  .border-secondary{border-color:var(--secondary);}
+  .focus\:ring-secondary:focus{--tw-ring-color:var(--secondary);}
+  .sidebar-link{display:flex;align-items:center;gap:.6rem;padding:.55rem 1.1rem;font-size:.88rem;cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
+  .sidebar-link:hover{background:rgba(255,255,255,.06);}
+  .sidebar-link-active{background:rgba(201,168,87,.15);border-left-color:var(--secondary);color:#fff;font-weight:700;}
+  .sidebar-child{padding-left:2.2rem;font-size:.82rem;}
+  .card{background:#fff;border:1px solid var(--outline-variant);border-radius:.5rem;}
+  .chev{transition:transform .2s;}
+  .chev.open{transform:rotate(180deg);}
+  details>summary{list-style:none;cursor:pointer;}
+  details>summary::-webkit-details-marker{display:none;}
+  .hero-default{background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="%23556b3a"/><stop offset="1" stop-color="%23243018"/></linearGradient></defs><rect width="1200" height="500" fill="url(%23g)"/></svg>');background-size:cover;background-position:center;}
+  .editable-outline:hover{outline:2px dashed var(--secondary);outline-offset:2px;}
+  .scrollbar-thin::-webkit-scrollbar{width:6px;height:6px;}
+  .scrollbar-thin::-webkit-scrollbar-thumb{background:var(--outline-variant);border-radius:3px;}
+  .text-shadow{text-shadow:0 2px 4px rgba(0,0,0,.7);}
+  .prose-desc{white-space:pre-wrap;line-height:1.9;font-size:.95rem;color:var(--on-surface);}
+  .prose-desc h1,.prose-desc h2,.prose-desc h3{font-weight:700;margin:.6em 0 .3em;}
+  .prose-desc h2{font-size:1.15rem;}
+  .prose-desc h3{font-size:1.05rem;}
+  .prose-desc ul,.prose-desc ol{padding-left:1.6em;margin:.4em 0;}
+  .prose-desc ul{list-style:disc;}
+  .prose-desc ol{list-style:decimal;}
+  .prose-desc a{color:var(--secondary);text-decoration:underline;}
+  .prose-desc strong,.prose-desc b{font-weight:700;}
+  .prose-desc em,.prose-desc i{font-style:italic;}
+  .prose-desc u{text-decoration:underline;}
+  .prose-desc[contenteditable="true"]:empty:before{content:attr(data-placeholder);color:var(--on-surface-variant);font-style:italic;}
+  .prose-desc[contenteditable="true"]{outline:none;}
+  .prose-desc[contenteditable="true"]:focus{outline:2px dashed var(--secondary);outline-offset:4px;}
+  .toolbar-btn{padding:.25rem .5rem;border:1px solid var(--outline-variant);background:#fff;border-radius:.25rem;font-size:.7rem;cursor:pointer;}
+  .toolbar-btn:hover{background:var(--surface-container-low);}
+  .toolbar-btn.active{background:var(--secondary);color:var(--on-secondary);}
+  .free-item-handle{position:absolute;top:-12px;right:-12px;display:flex;gap:4px;}
+  @media print{.no-print{display:none!important;}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useEffect, useRef, useMemo, Fragment, useCallback } = React;
+
+/* ============ Constants ============ */
+const STORAGE_KEY = "henshukyoku_portal_v4";
+const ADMIN_PW_KEY = "henshukyoku_admin_pw";
+const SYNC_CFG_KEY = "henshukyoku_sync_cfg";
+const ADMIN_DEFAULT_PW = "admin";
+const HERO_HEIGHT_HOME = 384; // px (h-96)
+const HERO_HEIGHT_PAGE = 384; // px (h-96) — 全ページ統一
+const DEFAULT_FREE_STYLE = { offsetX: 0, offsetY: 0, scale: 100 };
+const DEFAULT_HERO_STYLE = { posX: 50, posY: 50, scale: 100 };
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+/* ============ 階層化マッピング ============
+   ここに登録した子→親の関係はロード時に自動的に navItems へ反映される。
+   ユーザーがエディタで親を切り替えても再ロード時に再適用される点に注意。 */
+const NESTING = {
+  // 編集業務
+  "nfyzzis":  "henshu2",   // 通常紙案件
+  "pear6pp":  "henshu2",   // 電子・プロモ付き・ルネ新
+  // プロモ・流通
+  "98h04vv":  "promo",     // 広告回覧
+  "mxbvat2":  "promo",     // プロモーション
+  "52vfgsh":  "promo",     // 流通
+  // 締め・刊行後・重版
+  "shime-after": "shime",  // 締め・刊行後（新設）
+  "5zjq2ai":  "shime",     // 重版
+  // お役立ちサイト
+  "useful":   "eixonkv",   // 原稿執筆関連
+  "5v0su9q":  "eixonkv",   // 制作関連
+  "olrk2qq":  "eixonkv",   // デザイン関連
+  "okkus4q":  "eixonkv",   // 役立つかも？
+};
+
+const enforceNesting = (navItems) => (navItems || []).map(n => {
+  if (NESTING[n.id] && !n.parent) return { ...n, parent: NESTING[n.id] };
+  return n;
+});
+
+/* 「締め・刊行後」サブタブが未登録なら shime 直下に作成 */
+const ensureSpecialNavItems = (navItems) => {
+  const items = [...(navItems || [])];
+  if (!items.find(n => n.id === "shime-after")) {
+    const idx = items.findIndex(n => n.id === "shime");
+    const newItem = { id: "shime-after", label: "締め・刊行後", icon: "calendar", parent: "shime" };
+    if (idx >= 0) items.splice(idx + 1, 0, newItem);
+    else items.push(newItem);
+  }
+  return items;
+};
+
+const ensureSpecialPages = (pages) => {
+  const p = { ...(pages || {}) };
+  if (!p["shime-after"]) p["shime-after"] = { description: "", links: [], heroImage: null, images: [], textBoxes: [] };
+  return p;
+};
+
+/* ============ Icon helper (span wrapper, lucide-safe) ============ */
+const Icon = ({ name, className = "w-4 h-4" }) => {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    let cancelled = false;
+    const render = () => {
+      if (cancelled || !ref.current) return;
+      if (!window.lucide || !window.lucide.createIcons) { setTimeout(render, 50); return; }
+      ref.current.innerHTML = `<i data-lucide="${name}" class="${className}"></i>`;
+      try { window.lucide.createIcons(); } catch (e) {}
+    };
+    render();
+    return () => { cancelled = true; };
+  }, [name, className]);
+  return <span ref={ref} className="inline-flex items-center align-middle" aria-hidden="true" />;
+};
+
+/* ============ Default data transforms ============ */
+const transformDefaults = (raw) => {
+  const d = JSON.parse(JSON.stringify(raw));
+  // Filter & rename
+  d.navItems = (d.navItems || []).filter(n => n.id !== "3h2matt");
+  for (const n of d.navItems) {
+    if (n.id === "pear6pp") n.label = "電子・プロモ付き・ルネ新";
+  }
+  // 共通階層化＆特殊サブタブ作成
+  d.navItems = ensureSpecialNavItems(enforceNesting(d.navItems));
+  d.pages = ensureSpecialPages(d.pages);
+  // Initialize pages
+  d.pages = d.pages || {};
+  for (const id of Object.keys(d.pages)) {
+    const p = d.pages[id];
+    p.images = p.images || [];
+    p.textBoxes = p.textBoxes || [];
+    if (p.mainImage && p.images.length === 0) {
+      p.images.push({ id: "img-" + uid(), src: p.mainImage, style: { ...DEFAULT_FREE_STYLE, ...(p.mainImageStyle||{}) } });
+    }
+    delete p.mainImage; delete p.mainImageStyle;
+  }
+  // Categorized links for nfyzzis & pear6pp
+  if (d.pages.nfyzzis && !d.pages.nfyzzis.linkCategories) {
+    d.pages.nfyzzis.linkCategories = buildNfyzzisCategories(d.pages.nfyzzis.links || []);
+  }
+  if (d.pages.pear6pp && !d.pages.pear6pp.linkCategories) {
+    d.pages.pear6pp.linkCategories = buildPear6ppCategories(d.pages.pear6pp.links || []);
+  }
+  // Embed for kaizen page
+  if (d.pages.kaizen && !d.pages.kaizen.embedUrl) {
+    const f = (d.pages.kaizen.links || []).find(l => l.url && l.url.includes("docs.google.com/forms"));
+    if (f) d.pages.kaizen.embedUrl = f.url;
+  }
+  // Home hero icons
+  d.homeHeroIcons = d.homeHeroIcons || [];
+  return d;
+};
+
+const findLink = (links, ...patterns) => {
+  for (const p of patterns) {
+    const re = new RegExp(p, "i");
+    const m = links.find(l => re.test(l.label || ""));
+    if (m) return { id: m.id || uid(), label: m.label, url: m.url };
+  }
+  return null;
+};
+
+const buildNfyzzisCategories = (links) => [
+  { id: "cat1", label: "案件管理", links: [
+    findLink(links, "制作案件管理") || { id: uid(), label: "制作案件管理", url: "#" },
+    { id: uid(), label: "刊行日変更報告", url: "#" },
+    findLink(links, "フローチャート", "制作フロー") || { id: uid(), label: "フローチャート", url: "#" },
+  ]},
+  { id: "cat2", label: "データ保管", links: [
+    findLink(links, "書誌情報") || { id: uid(), label: "書誌情報", url: "#" },
+    { id: uid(), label: "ISBN", url: "#" },
+    findLink(links, "承認定価") || { id: uid(), label: "承認定価", url: "#" },
+    findLink(links, "ヒヤリハット") || { id: uid(), label: "ヒヤリハット", url: "#" },
+  ]},
+  { id: "cat3", label: "依頼", links: [
+    findLink(links, "校正依頼管理") || { id: uid(), label: "校正依頼管理", url: "#" },
+    findLink(links, "アシスタント") || { id: uid(), label: "アシスタント・エキスパート依頼", url: "#" },
+    { id: uid(), label: "GMC校正", url: "#" },
+  ]},
+  { id: "cat4", label: "発注", links: [
+    findLink(links, "デザイン局") || { id: uid(), label: "デザイン局ルール・シート", url: "#" },
+    findLink(links, "インボイス") || { id: uid(), label: "インボイスについて", url: "#" },
+    findLink(links, "発注書保管") || { id: uid(), label: "発注書保管", url: "#" },
+  ]}
+];
+
+const buildPear6ppCategories = (links) => [
+  { id: "cat1", label: "電子書籍", links: [
+    findLink(links, "ボンデジ") || { id: uid(), label: "ボンデジ入稿", url: "#" },
+    findLink(links, "ワイズネット") || { id: uid(), label: "ワイズネット資料", url: "#" },
+    findLink(links, "データbox", "databox", "データBox") || { id: uid(), label: "データBox", url: "#" },
+  ]},
+  { id: "cat2", label: "プロモ付き", links: [
+    findLink(links, "プロモ付き.*制作ガイド") || { id: uid(), label: "制作ガイド", url: "#" },
+  ]},
+  { id: "cat3", label: "ルネ新", links: [
+    findLink(links, "ルネ新.*制作ガイド") || { id: uid(), label: "制作ガイド", url: "#" },
+  ]},
+  { id: "cat4", label: "表現者の肖像", links: [
+    { id: uid(), label: "管理シート", url: "#" },
+  ]}
+];
+
+const FALLBACK_DATA = {
+  siteTitle: "幻冬社ルネッサンス編集局サイト",
+  homeHeroImage: null, homeHeroTitle: "編集部掲示板",
+  noticeTitle: "お知らせ📢", noticeBody: "",
+  navItems: [{ id: "home", label: "ホーム", icon: "home" }],
+  announcements: [], pages: {}, homeHeroIcons: [], lastModified: 0
+};
+
+const DEFAULT_DATA = (() => {
+  const raw = window.__DEFAULT_PORTAL_DATA__;
+  return raw ? transformDefaults(raw) : FALLBACK_DATA;
+})();
+
+/* ============ Storage ============ */
+const mergeDefaults = (parsed) => {
+  const merged = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  Object.assign(merged, parsed || {});
+  merged.pages = { ...(DEFAULT_DATA.pages || {}) };
+  for (const k of Object.keys(merged.pages)) merged.pages[k] = { ...DEFAULT_DATA.pages[k] };
+  for (const [k, v] of Object.entries((parsed && parsed.pages) || {})) {
+    merged.pages[k] = { ...(merged.pages[k] || {}), ...v };
+  }
+  for (const k of Object.keys(merged.pages)) {
+    const p = merged.pages[k];
+    p.images = p.images || [];
+    p.textBoxes = p.textBoxes || [];
+    p.links = p.links || [];
+  }
+  merged.homeHeroIcons = merged.homeHeroIcons || [];
+  // 既存データにも階層化と shime-after を反映
+  merged.navItems = ensureSpecialNavItems(enforceNesting(merged.navItems));
+  merged.pages = ensureSpecialPages(merged.pages);
+  return merged;
+};
+
+const loadLocal = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    return mergeDefaults(JSON.parse(raw));
+  } catch { return JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+};
+const saveLocal = (d) => {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+  catch (e) { console.warn("localStorage save failed (容量超過の可能性):", e); }
+};
+
+const loadSyncCfg = () => {
+  try { return JSON.parse(localStorage.getItem(SYNC_CFG_KEY) || "null") || { enabled:false, binId:"", masterKey:"", autoPushSec:3, autoPullSec:30 }; }
+  catch { return { enabled:false, binId:"", masterKey:"", autoPushSec:3, autoPullSec:30 }; }
+};
+const saveSyncCfg = (c) => localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(c));
+
+/* ============ Cloud (JSONBin.io) ============ */
+const JSONBIN_BASE = "https://api.jsonbin.io/v3/b";
+async function cloudPull(cfg) {
+  if (!cfg?.enabled || !cfg.binId || !cfg.masterKey) throw new Error("同期未設定");
+  const res = await fetch(`${JSONBIN_BASE}/${cfg.binId}/latest`, {
+    headers: { "X-Master-Key": cfg.masterKey, "X-Bin-Meta": "false" }
+  });
+  if (!res.ok) throw new Error(`プル失敗 (${res.status})`);
+  return await res.json();
+}
+async function cloudPush(cfg, data) {
+  if (!cfg?.enabled || !cfg.binId || !cfg.masterKey) throw new Error("同期未設定");
+  const res = await fetch(`${JSONBIN_BASE}/${cfg.binId}`, {
+    method: "PUT",
+    headers: { "X-Master-Key": cfg.masterKey, "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`プッシュ失敗 (${res.status})`);
+  return true;
+}
+async function cloudCreate(masterKey, data) {
+  const res = await fetch(JSONBIN_BASE, {
+    method: "POST",
+    headers: {
+      "X-Master-Key": masterKey,
+      "Content-Type": "application/json",
+      "X-Bin-Private": "true",
+      "X-Bin-Name": encodeURIComponent("編集局ポータル")
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(`作成失敗 (${res.status})`);
+  const j = await res.json();
+  return j.metadata?.id;
+}
+
+/* ============ Image compression ============ */
+const compressImageToDataUrl = (file, maxW=1400, quality=0.78) => new Promise((resolve, reject) => {
+  const img = new window.Image();
+  const reader = new FileReader();
+  reader.onload = () => {
+    img.onload = () => {
+      const ratio = Math.min(maxW / img.width, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    img.src = reader.result;
+  };
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
+
+/* ============ Modal ============ */
+const Modal = ({ open, onClose, title, children, size="md" }) => {
+  if (!open) return null;
+  const w = size==="lg" ? "max-w-2xl" : size==="sm" ? "max-w-sm" : "max-w-lg";
+  return (
+    <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4" onClick={onClose}>
+      <div className={`bg-white rounded-xl shadow-2xl w-full ${w} max-h-[90vh] overflow-hidden flex flex-col`} onClick={e=>e.stopPropagation()}>
+        <div className="flex justify-between items-center px-5 py-3 border-b border-outline-variant">
+          <h3 className="font-bold">{title}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-surface-container-low rounded">
+            <Icon name="x" className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 overflow-y-auto">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Inline editable plain text ============ */
+const InlineEditable = ({ value, onChange, isAdmin, multiline=false, className="", placeholder="" }) => {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState(value);
+  useEffect(()=>setV(value),[value]);
+  if (!isAdmin) return <span className={className}>{value}</span>;
+  if (editing) {
+    return multiline ? (
+      <textarea autoFocus value={v} onChange={e=>setV(e.target.value)}
+        onBlur={()=>{setEditing(false); onChange(v);}}
+        className={`${className} border border-secondary rounded p-1 w-full`} rows={2}/>
+    ) : (
+      <input autoFocus value={v} onChange={e=>setV(e.target.value)}
+        onBlur={()=>{setEditing(false); onChange(v);}}
+        onKeyDown={e=>{ if(e.key==="Enter"){setEditing(false); onChange(v);} }}
+        placeholder={placeholder}
+        className={`${className} border border-secondary rounded p-1 bg-white`} />
+    );
+  }
+  return (
+    <span onClick={()=>setEditing(true)}
+      className={`${className} editable-outline cursor-pointer`}
+      title="クリックで編集">{value || <em className="text-on-surface-variant">{placeholder||"(クリックで編集)"}</em>}</span>
+  );
+};
+
+/* ============ Rich text editor (contentEditable) ============ */
+const RichTextEditor = ({ html, onChange, isAdmin, placeholder="ここに文章を入力" }) => {
+  const ref = useRef(null);
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (ref.current && ref.current.innerHTML !== (html || "")) {
+      ref.current.innerHTML = html || "";
+    }
+  }, [html]);
+
+  const exec = (cmd, val) => {
+    document.execCommand(cmd, false, val);
+    if (ref.current) onChange(ref.current.innerHTML);
+  };
+
+  const onInput = () => {
+    if (ref.current) onChange(ref.current.innerHTML);
+  };
+
+  if (!isAdmin) {
+    return <div className="prose-desc" dangerouslySetInnerHTML={{__html: html || `<em style='color:#999'>${placeholder}</em>`}}/>;
+  }
+
+  return (
+    <div className="border border-outline-variant rounded bg-white">
+      {focused && (
+        <div className="border-b border-outline-variant bg-surface-container-low p-2 flex flex-wrap gap-1 sticky top-0 z-10">
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("bold");}} className="toolbar-btn font-bold">B</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("italic");}} className="toolbar-btn italic">I</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("underline");}} className="toolbar-btn underline">U</button>
+          <span className="border-r border-outline-variant mx-1"/>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("formatBlock","H2");}} className="toolbar-btn">見出し1</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("formatBlock","H3");}} className="toolbar-btn">見出し2</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("formatBlock","P");}} className="toolbar-btn">本文</button>
+          <span className="border-r border-outline-variant mx-1"/>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("insertUnorderedList");}} className="toolbar-btn">●リスト</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("insertOrderedList");}} className="toolbar-btn">①リスト</button>
+          <span className="border-r border-outline-variant mx-1"/>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("justifyLeft");}} className="toolbar-btn">左</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("justifyCenter");}} className="toolbar-btn">中央</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("justifyRight");}} className="toolbar-btn">右</button>
+          <span className="border-r border-outline-variant mx-1"/>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("fontSize","2");}} className="toolbar-btn">小</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("fontSize","3");}} className="toolbar-btn">中</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("fontSize","5");}} className="toolbar-btn">大</button>
+          <span className="border-r border-outline-variant mx-1"/>
+          <button onMouseDown={(e)=>{e.preventDefault();
+            const url=prompt("リンク先URL");
+            if(url) exec("createLink", url);
+          }} className="toolbar-btn">🔗リンク</button>
+          <button onMouseDown={(e)=>{e.preventDefault(); exec("removeFormat");}} className="toolbar-btn">書式解除</button>
+        </div>
+      )}
+      <div
+        ref={ref}
+        contentEditable
+        suppressContentEditableWarning
+        onFocus={()=>setFocused(true)}
+        onBlur={()=>{ setTimeout(()=>setFocused(false), 200); onInput(); }}
+        onInput={onInput}
+        className="prose-desc p-4 min-h-[120px]"
+        data-placeholder={placeholder}
+      />
+    </div>
+  );
+};
+
+/* ============ Image style controls (hero / cover) ============ */
+const ImageStyleControls = ({ style, onChange }) => {
+  const s = { ...DEFAULT_HERO_STYLE, ...(style || {}) };
+  const upd = (f) => onChange({ ...s, ...f });
+  return (
+    <div className="bg-white/95 backdrop-blur border border-outline-variant rounded-lg shadow-lg p-3 space-y-2 text-xs w-60">
+      <div className="font-bold flex items-center justify-between">
+        <span className="flex items-center gap-1"><Icon name="move" className="w-3.5 h-3.5"/>表示位置・サイズ</span>
+        <button onClick={()=>onChange(DEFAULT_HERO_STYLE)} className="text-[10px] text-on-surface-variant hover:text-primary underline">リセット</button>
+      </div>
+      <label className="block"><div className="flex justify-between"><span>横位置</span><span className="text-on-surface-variant">{s.posX}%</span></div>
+        <input type="range" min="0" max="100" value={s.posX} onChange={e=>upd({posX:Number(e.target.value)})} className="w-full"/></label>
+      <label className="block"><div className="flex justify-between"><span>縦位置</span><span className="text-on-surface-variant">{s.posY}%</span></div>
+        <input type="range" min="0" max="100" value={s.posY} onChange={e=>upd({posY:Number(e.target.value)})} className="w-full"/></label>
+      <label className="block"><div className="flex justify-between"><span>拡大率</span><span className="text-on-surface-variant">{s.scale}%</span></div>
+        <input type="range" min="50" max="300" step="5" value={s.scale} onChange={e=>upd({scale:Number(e.target.value)})} className="w-full"/></label>
+    </div>
+  );
+};
+
+/* ============ Free image style controls (translate based) ============ */
+const FreeImageControls = ({ style, onChange, scaleMin=10, scaleMax=500 }) => {
+  const s = { ...DEFAULT_FREE_STYLE, ...(style || {}) };
+  const upd = (f) => onChange({ ...s, ...f });
+  return (
+    <div className="bg-white/95 backdrop-blur border border-outline-variant rounded-lg shadow-lg p-3 space-y-2 text-xs w-64">
+      <div className="font-bold flex items-center justify-between">
+        <span className="flex items-center gap-1"><Icon name="move" className="w-3.5 h-3.5"/>表示位置・サイズ</span>
+        <button onClick={()=>onChange(DEFAULT_FREE_STYLE)} className="text-[10px] text-on-surface-variant hover:text-primary underline">リセット</button>
+      </div>
+      <label className="block"><div className="flex justify-between"><span>左右位置</span><span className="text-on-surface-variant">{s.offsetX}px</span></div>
+        <input type="range" min="-1200" max="1200" step="2" value={s.offsetX} onChange={e=>upd({offsetX:Number(e.target.value)})} className="w-full"/></label>
+      <label className="block"><div className="flex justify-between"><span>上下位置</span><span className="text-on-surface-variant">{s.offsetY}px</span></div>
+        <input type="range" min="-1200" max="1200" step="2" value={s.offsetY} onChange={e=>upd({offsetY:Number(e.target.value)})} className="w-full"/></label>
+      <label className="block"><div className="flex justify-between"><span>拡大率</span><span className="text-on-surface-variant">{s.scale}%</span></div>
+        <input type="range" min={scaleMin} max={scaleMax} step="5" value={s.scale} onChange={e=>upd({scale:Number(e.target.value)})} className="w-full"/></label>
+      <div className="flex gap-1">
+        <button onClick={()=>upd({scale: Math.max(scaleMin, s.scale-10)})} className="flex-1 border border-outline-variant rounded py-1">−10%</button>
+        <button onClick={()=>upd({scale: Math.min(scaleMax, s.scale+10)})} className="flex-1 border border-outline-variant rounded py-1">+10%</button>
+      </div>
+      <div className="grid grid-cols-3 gap-1 pt-1">
+        <button onClick={()=>upd({offsetX: s.offsetX-20})} className="border border-outline-variant rounded py-1">←</button>
+        <button onClick={()=>upd({offsetX:0, offsetY:0})} className="border border-outline-variant rounded py-1">中央</button>
+        <button onClick={()=>upd({offsetX: s.offsetX+20})} className="border border-outline-variant rounded py-1">→</button>
+        <button onClick={()=>upd({offsetY: s.offsetY-20})} className="border border-outline-variant rounded py-1">↑</button>
+        <span/>
+        <button onClick={()=>upd({offsetY: s.offsetY+20})} className="border border-outline-variant rounded py-1">↓</button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Hero icon (visual only — modal moved to HomeScreen level) ============ */
+const HeroIcon = ({ icon, isAdmin, onEdit, onDelete }) => {
+  const x = icon.x ?? 8, y = icon.y ?? 50;
+  const isNew = !icon.image && !icon.url;
+
+  const inner = (
+    <div className="flex flex-col items-center gap-1 text-white text-shadow">
+      <div className={`w-12 h-12 rounded-full overflow-hidden bg-white/20 flex items-center justify-center ${isNew ? "ring-4 ring-secondary animate-pulse" : "ring-2 ring-white/40"}`}>
+        {icon.image ? (
+          <img src={icon.image} alt="" className="w-full h-full object-cover"/>
+        ) : (
+          <Icon name="instagram" className="w-6 h-6 text-white"/>
+        )}
+      </div>
+      <span className="text-xs underline whitespace-nowrap">{icon.label || "(無題)"}</span>
+    </div>
+  );
+
+  return (
+    <div className="absolute z-20" style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}>
+      {isAdmin ? (
+        <div className="relative group">
+          <button type="button" onClick={(e)=>{ e.stopPropagation(); onEdit(); }} className="cursor-pointer block focus:outline-none">{inner}</button>
+          <div className="absolute -top-2 -right-2 flex gap-1 opacity-80 group-hover:opacity-100">
+            <button onClick={(e)=>{ e.stopPropagation(); onEdit(); }} className="bg-secondary text-on-secondary rounded-full p-1 shadow" title="編集"><Icon name="pencil" className="w-3 h-3"/></button>
+            <button onClick={(e)=>{ e.stopPropagation(); if(confirm("このアイコンを削除しますか？")) onDelete(); }} className="bg-error text-white rounded-full p-1 shadow" title="削除"><Icon name="trash-2" className="w-3 h-3"/></button>
+          </div>
+        </div>
+      ) : (
+        icon.url ? <a href={icon.url} target="_blank" rel="noreferrer">{inner}</a> : inner
+      )}
+    </div>
+  );
+};
+
+/* ============ Hero icon edit form (used by Modal on HomeScreen) ============ */
+const IconEditForm = ({ icon, onChange, onClose, onDelete }) => {
+  const fileRef = useRef();
+  const x = icon.x ?? 8, y = icon.y ?? 50;
+  return (
+    <div className="space-y-3 text-sm">
+      <div>
+        <label className="block text-xs font-bold mb-1">画像</label>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex items-center justify-center">
+            {icon.image ? <img src={icon.image} alt="" className="w-full h-full object-cover"/> : <Icon name="image" className="w-6 h-6 text-on-surface-variant"/>}
+          </div>
+          <button onClick={()=>fileRef.current?.click()} className="border border-outline-variant rounded px-3 py-1.5 text-xs">画像選択</button>
+          {icon.image && <button onClick={()=>onChange({...icon, image:null})} className="text-xs text-error">削除</button>}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async e=>{
+            const f=e.target.files?.[0]; if(!f) return;
+            try { onChange({ ...icon, image: await compressImageToDataUrl(f, 256, 0.85) }); } catch {}
+            e.target.value="";
+          }}/>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-bold mb-1">ラベル</label>
+        <input value={icon.label||""} onChange={e=>onChange({...icon, label:e.target.value})} className="w-full border border-outline-variant rounded p-2 text-sm"/>
+      </div>
+      <div>
+        <label className="block text-xs font-bold mb-1">リンク先URL</label>
+        <input value={icon.url||""} onChange={e=>onChange({...icon, url:e.target.value})} className="w-full border border-outline-variant rounded p-2 text-sm" placeholder="https://..."/>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="text-xs">横位置 ({x}%)<input type="range" min="0" max="100" value={x} onChange={e=>onChange({...icon, x:Number(e.target.value)})} className="w-full"/></label>
+        <label className="text-xs">縦位置 ({y}%)<input type="range" min="0" max="100" value={y} onChange={e=>onChange({...icon, y:Number(e.target.value)})} className="w-full"/></label>
+      </div>
+      <div className="flex justify-between pt-2">
+        <button onClick={()=>{ if(confirm("このアイコンを削除しますか？")){ onDelete(); onClose(); } }} className="px-3 py-1.5 border border-error text-error rounded text-sm">削除</button>
+        <button onClick={onClose} className="px-4 py-1.5 bg-primary text-on-primary rounded text-sm font-bold">完了</button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ HeroBar ============ */
+const HeroBar = ({ image, imageStyle, title, isAdmin, onChangeImage, onChangeImageStyle, onChangeTitle, height=HERO_HEIGHT_PAGE, children }) => {
+  const fileRef = useRef();
+  const [showCtrl, setShowCtrl] = useState(false);
+  const s = { ...DEFAULT_HERO_STYLE, ...(imageStyle || {}) };
+  return (
+    <div className="relative">
+      <div className="overflow-hidden hero-default relative" style={{height: `${height}px`}}>
+        {image && (
+          <img src={image} alt="" draggable="false"
+            className="absolute inset-0 w-full h-full select-none pointer-events-none"
+            style={{
+              objectFit: "cover",
+              objectPosition: `${s.posX}% ${s.posY}%`,
+              transform: `scale(${s.scale/100})`,
+              transformOrigin: `${s.posX}% ${s.posY}%`,
+              filter: "brightness(0.85)"
+            }}/>
+        )}
+        {children}
+      </div>
+      {isAdmin && (
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-20">
+          <div className="flex gap-2 flex-wrap justify-end">
+            <button onClick={()=>fileRef.current?.click()}
+              className="bg-white/90 hover:bg-white text-primary text-xs font-bold px-3 py-1.5 rounded shadow flex items-center gap-1">
+              <Icon name="image-plus" className="w-3.5 h-3.5"/>ヘッダー画像{image?"変更":"追加"}
+            </button>
+            {image && (
+              <Fragment>
+                <button onClick={()=>setShowCtrl(c=>!c)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded shadow flex items-center gap-1 ${showCtrl?"bg-secondary text-on-secondary":"bg-white/90 hover:bg-white text-primary"}`}>
+                  <Icon name="move" className="w-3.5 h-3.5"/>位置調整
+                </button>
+                <button onClick={()=>{ if(confirm("ヘッダー画像を削除しますか？")) onChangeImage(null); }}
+                  className="bg-white/90 hover:bg-white text-error text-xs font-bold px-3 py-1.5 rounded shadow">削除</button>
+              </Fragment>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async (e)=>{
+              const f=e.target.files?.[0]; if(!f) return;
+              try { onChangeImage(await compressImageToDataUrl(f, 1800, 0.82)); } catch { alert("画像読込失敗"); }
+              e.target.value="";
+            }}/>
+          </div>
+          {showCtrl && image && <ImageStyleControls style={s} onChange={onChangeImageStyle}/>}
+        </div>
+      )}
+      <div className="bg-accent-yellow w-full py-4">
+        <h1 className="text-center text-xl md:text-2xl font-bold tracking-widest">
+          <InlineEditable value={title} onChange={onChangeTitle} isAdmin={isAdmin} />
+        </h1>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Announcement Card ============ */
+const AnnouncementCard = ({ item, isAdmin, onChange, onDelete }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="card overflow-hidden">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-surface-container-low transition-colors">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className="text-sm">・</span>
+          {isAdmin ? (
+            <Fragment>
+              <input value={item.date} onClick={(e)=>e.stopPropagation()} onChange={e=>onChange({...item, date:e.target.value})} className="w-14 text-sm font-bold border border-outline-variant rounded px-1 py-0.5"/>
+              <input value={item.title} onClick={(e)=>e.stopPropagation()} onChange={e=>onChange({...item, title:e.target.value})} className="text-sm flex-1 border border-outline-variant rounded px-2 py-0.5"/>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <span className="text-sm font-bold w-14 shrink-0">{item.date}</span>
+              <span className="text-sm truncate">{item.title}</span>
+            </Fragment>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isAdmin && <span onClick={(e)=>{e.stopPropagation(); onDelete();}} className="text-error p-1 rounded hover:bg-red-50"><Icon name="trash-2" className="w-4 h-4"/></span>}
+          <Icon name="chevron-down" className={`w-4 h-4 chev ${open?"open":""}`}/>
+        </div>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-1 border-t border-outline-variant text-sm text-on-surface-variant whitespace-pre-wrap">
+          {isAdmin ? (
+            <textarea value={item.body} onChange={e=>onChange({...item, body:e.target.value})} className="w-full border border-outline-variant rounded p-2 text-sm" rows={3}/>
+          ) : (item.body || <em>本文なし</em>)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ============ Categorized Links display ============ */
+const CategorizedLinks = ({ categories, isAdmin, onChange }) => {
+  const cats = categories || [];
+  const updCat = (i, f) => onChange(cats.map((c,idx)=> idx===i?{...c,...f}:c));
+  const updLink = (ci, li, f) => updCat(ci, { links: cats[ci].links.map((l,idx)=> idx===li?{...l,...f}:l) });
+  const addLink = (ci) => updCat(ci, { links: [...cats[ci].links, { id: uid(), label: "新しいリンク", url: "#" }] });
+  const delLink = (ci, li) => updCat(ci, { links: cats[ci].links.filter((_,idx)=>idx!==li) });
+  const addCat = () => onChange([...cats, { id: uid(), label: "新カテゴリ", links: [] }]);
+  const delCat = (i) => { if(confirm("カテゴリを削除しますか？")) onChange(cats.filter((_,idx)=>idx!==i)); };
+  const moveCat = (i, dir) => { const n=[...cats]; const j=i+dir; if(j<0||j>=n.length) return; [n[i],n[j]]=[n[j],n[i]]; onChange(n); };
+
+  return (
+    <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 space-y-5">
+      {cats.map((cat, ci) => (
+        <div key={cat.id} className="grid grid-cols-12 gap-3 items-start">
+          <div className="col-span-12 md:col-span-2 text-center pt-2">
+            {isAdmin ? (
+              <div className="flex flex-col items-center gap-1">
+                <input value={cat.label} onChange={e=>updCat(ci,{label:e.target.value})} className="w-full text-sm border border-outline-variant rounded px-2 py-1 text-center"/>
+                <div className="flex gap-1">
+                  <button onClick={()=>moveCat(ci,-1)} className="text-xs px-1 border border-outline-variant rounded">↑</button>
+                  <button onClick={()=>moveCat(ci, 1)} className="text-xs px-1 border border-outline-variant rounded">↓</button>
+                  <button onClick={()=>delCat(ci)} className="text-xs px-1 text-error border border-error rounded">削除</button>
+                </div>
+              </div>
+            ) : (
+              <span className="text-sm font-bold text-on-surface-variant">{cat.label}</span>
+            )}
+          </div>
+          <div className="col-span-12 md:col-span-10 flex flex-wrap gap-3">
+            {cat.links.map((l, li) => (
+              <div key={l.id || li} className="flex-1 min-w-[160px]">
+                {isAdmin ? (
+                  <div className="border border-outline-variant rounded bg-white p-2 space-y-1">
+                    <input value={l.label} onChange={e=>updLink(ci,li,{label:e.target.value})} className="w-full text-sm border-b border-outline-variant pb-1" placeholder="ラベル"/>
+                    <input value={l.url} onChange={e=>updLink(ci,li,{url:e.target.value})} className="w-full text-xs text-on-surface-variant" placeholder="URL"/>
+                    <button onClick={()=>delLink(ci,li)} className="text-xs text-error">削除</button>
+                  </div>
+                ) : (
+                  <a href={l.url} target="_blank" rel="noreferrer"
+                     className="block border border-outline-variant rounded bg-white px-4 py-3 text-center text-sm hover:bg-secondary hover:text-on-secondary hover:border-secondary transition-colors">
+                    {l.label}
+                  </a>
+                )}
+              </div>
+            ))}
+            {isAdmin && (
+              <button onClick={()=>addLink(ci)} className="border border-dashed border-outline-variant rounded px-4 py-3 text-xs text-on-surface-variant hover:bg-white">＋追加</button>
+            )}
+          </div>
+        </div>
+      ))}
+      {isAdmin && (
+        <button onClick={addCat} className="w-full border border-dashed border-outline-variant rounded py-2 text-sm text-on-surface-variant hover:bg-white">＋カテゴリを追加</button>
+      )}
+    </div>
+  );
+};
+
+/* ============ Free positioned items canvas (images + textboxes) ============ */
+const FreeItem = ({ item, isAdmin, onChange, onDelete, onMoveUp, onMoveDown }) => {
+  const [showCtrl, setShowCtrl] = useState(false);
+  const s = { ...DEFAULT_FREE_STYLE, ...(item.style || {}) };
+  const baseStyle = {
+    position: "absolute",
+    left: "50%", top: "50%",
+    transform: `translate(-50%, -50%) translate(${s.offsetX}px, ${s.offsetY}px) scale(${s.scale/100})`,
+    transformOrigin: "center center",
+  };
+  const fileRef = useRef();
+
+  return (
+    <div style={baseStyle} className="group">
+      {item.type === "image" ? (
+        <img src={item.src} alt="" draggable="false" className="block select-none max-w-none"/>
+      ) : (
+        <div className="bg-white border border-outline-variant rounded-lg p-4 shadow-sm" style={{minWidth: 280, maxWidth: 600}}>
+          <RichTextEditor html={item.content} onChange={(v)=>onChange({...item, content:v})} isAdmin={isAdmin} placeholder="テキストを入力"/>
+        </div>
+      )}
+      {isAdmin && (
+        <Fragment>
+          <div className="absolute -top-3 -right-3 flex gap-1 bg-white border border-outline-variant rounded shadow px-1 py-0.5">
+            <button onClick={()=>setShowCtrl(c=>!c)} className="text-[10px] px-1 hover:bg-secondary hover:text-on-secondary rounded" title="位置・サイズ"><Icon name="move" className="w-3 h-3"/></button>
+            {item.type === "image" && (
+              <button onClick={()=>fileRef.current?.click()} className="text-[10px] px-1 hover:bg-secondary hover:text-on-secondary rounded" title="画像変更"><Icon name="image" className="w-3 h-3"/></button>
+            )}
+            <button onClick={onMoveUp} className="text-[10px] px-1 hover:bg-surface-container-low rounded" title="前面へ">↑</button>
+            <button onClick={onMoveDown} className="text-[10px] px-1 hover:bg-surface-container-low rounded" title="背面へ">↓</button>
+            <button onClick={()=>{ if(confirm("削除しますか？")) onDelete(); }} className="text-[10px] px-1 text-error hover:bg-red-50 rounded"><Icon name="trash-2" className="w-3 h-3"/></button>
+          </div>
+          {item.type === "image" && (
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={async e=>{
+              const f=e.target.files?.[0]; if(!f) return;
+              try { onChange({ ...item, src: await compressImageToDataUrl(f, 1800, 0.82) }); } catch {}
+              e.target.value="";
+            }}/>
+          )}
+          {showCtrl && (
+            <div className="absolute top-6 right-0 z-30">
+              <FreeImageControls style={s} onChange={(v)=>onChange({...item, style:v})}/>
+            </div>
+          )}
+        </Fragment>
+      )}
+    </div>
+  );
+};
+
+const FreeCanvas = ({ items, onChange, isAdmin, minHeight=600 }) => {
+  const fileRef = useRef();
+  const addImage = async (file) => {
+    try {
+      const src = await compressImageToDataUrl(file, 1800, 0.82);
+      onChange([...(items||[]), { id: uid(), type: "image", src, style: {...DEFAULT_FREE_STYLE} }]);
+    } catch { alert("画像読込失敗"); }
+  };
+  const addTextBox = () => {
+    onChange([...(items||[]), { id: uid(), type: "textbox", content: "<p>新しいテキスト</p>", style: {...DEFAULT_FREE_STYLE, offsetY: 40} }]);
+  };
+  const updateItem = (id, next) => onChange(items.map(i => i.id===id ? next : i));
+  const deleteItem = (id) => onChange(items.filter(i => i.id !== id));
+  const moveItem = (id, dir) => {
+    const idx = items.findIndex(i => i.id === id); if (idx<0) return;
+    const j = idx + dir; if (j<0 || j>=items.length) return;
+    const arr = [...items]; [arr[idx], arr[j]] = [arr[j], arr[idx]]; onChange(arr);
+  };
+
+  return (
+    <div className="relative" style={{minHeight: `${minHeight}px`}}>
+      {(items||[]).map(it => (
+        <FreeItem key={it.id} item={it} isAdmin={isAdmin}
+          onChange={(n)=>updateItem(it.id, n)}
+          onDelete={()=>deleteItem(it.id)}
+          onMoveUp={()=>moveItem(it.id, +1)}
+          onMoveDown={()=>moveItem(it.id, -1)}
+        />
+      ))}
+      {(!items || items.length===0) && (
+        <div className="absolute inset-0 flex items-center justify-center text-on-surface-variant text-sm">
+          {isAdmin ? "右上のボタンから画像・テキストを追加してください" : "（コンテンツなし）"}
+        </div>
+      )}
+      {isAdmin && (
+        <div className="absolute top-2 right-2 z-40 flex gap-2">
+          <button onClick={()=>fileRef.current?.click()}
+            className="bg-secondary text-on-secondary text-xs font-bold px-3 py-1.5 rounded shadow flex items-center gap-1">
+            <Icon name="image-plus" className="w-3.5 h-3.5"/>画像追加
+          </button>
+          <button onClick={addTextBox}
+            className="bg-primary text-on-primary text-xs font-bold px-3 py-1.5 rounded shadow flex items-center gap-1">
+            <Icon name="type" className="w-3.5 h-3.5"/>テキスト追加
+          </button>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e=>{
+            const f=e.target.files?.[0]; if(!f) return;
+            addImage(f); e.target.value="";
+          }}/>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ============ Embed iframe ============ */
+const EmbedFrame = ({ url, height=720, isAdmin, onChange }) => {
+  return (
+    <div className="space-y-3">
+      {isAdmin && (
+        <div className="flex gap-2 items-center bg-surface-container-low border border-outline-variant rounded p-2">
+          <Icon name="link" className="w-4 h-4 text-on-surface-variant"/>
+          <input value={url||""} onChange={e=>onChange(e.target.value)} placeholder="埋め込みURL（Googleフォーム等）"
+            className="flex-1 text-xs border border-outline-variant rounded px-2 py-1"/>
+          {url && <a href={url} target="_blank" rel="noreferrer" className="text-xs text-secondary underline whitespace-nowrap">別タブで開く →</a>}
+          {url && <button onClick={()=>onChange("")} className="text-xs text-error">削除</button>}
+        </div>
+      )}
+      {url ? (
+        <Fragment>
+          <div className="card overflow-hidden">
+            <iframe src={url} style={{border:0, width:"100%", height: `${height}px`}} title="embedded"></iframe>
+          </div>
+          {!isAdmin && (
+            <div className="text-right">
+              <a href={url} target="_blank" rel="noreferrer" className="text-sm text-secondary underline">→ 別タブで開く</a>
+            </div>
+          )}
+        </Fragment>
+      ) : isAdmin ? (
+        <div className="text-on-surface-variant text-sm text-center py-6 border border-dashed border-outline-variant rounded">埋め込みURLを入力すると下にフォームが表示されます</div>
+      ) : null}
+    </div>
+  );
+};
+
+/* ============ Sub-page card grid (for parent pages like 編集業務) ============ */
+const SubPageCards = ({ children, onSelect }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {children.map(c => (
+      <button key={c.id} onClick={()=>onSelect(c.id)}
+        className="card p-6 text-left hover:bg-surface-container-low hover:border-secondary transition-colors flex items-center gap-4 group">
+        <div className="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center text-secondary">
+          <Icon name={c.icon || "link"} className="w-6 h-6"/>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-lg group-hover:text-secondary">{c.label}</h3>
+          <span className="text-xs text-on-surface-variant">→ クリックして開く</span>
+        </div>
+        <Icon name="chevron-right" className="w-5 h-5 text-on-surface-variant"/>
+      </button>
+    ))}
+  </div>
+);
+
+/* ============ Sidebar ============ */
+const Sidebar = ({ items, active, onSelect, isAdmin, onEditNav }) => {
+  const tree = [];
+  const childMap = {};
+  for (const it of items) {
+    if (it.parent) (childMap[it.parent] = childMap[it.parent] || []).push(it);
+    else tree.push(it);
+  }
+  const [expanded, setExpanded] = useState(() => {
+    const e = {};
+    for (const it of items) if (it.parent) e[it.parent] = true;
+    return e;
+  });
+
+  return (
+    <aside className="fixed left-0 top-0 h-full w-56 bg-primary text-on-primary flex flex-col z-40">
+      <div className="px-5 py-6 border-b border-white/10">
+        <div className="text-xs opacity-60 tracking-widest">EDITORIAL PORTAL</div>
+        <div className="text-base font-bold mt-1">編集部掲示板</div>
+      </div>
+      <nav className="flex-1 mt-2 overflow-y-auto scrollbar-thin">
+        {tree.map((it) => {
+          const kids = childMap[it.id] || [];
+          const isOpen = expanded[it.id] !== false;
+          return (
+            <Fragment key={it.id}>
+              <div className="flex items-stretch">
+                <button onClick={()=>onSelect(it.id)}
+                  className={`flex-1 text-left sidebar-link ${active === it.id ? "sidebar-link-active" : "text-on-primary/80"}`}>
+                  <Icon name={it.icon || "circle"} className="w-4 h-4"/>
+                  <span className="truncate">{it.label}</span>
+                </button>
+                {kids.length > 0 && (
+                  <button onClick={()=>setExpanded(e=>({...e, [it.id]: !isOpen}))}
+                    className="px-2 text-on-primary/60 hover:text-on-primary">
+                    <Icon name="chevron-down" className={`w-4 h-4 chev ${isOpen?"open":""}`}/>
+                  </button>
+                )}
+              </div>
+              {isOpen && kids.map(c => (
+                <button key={c.id} onClick={()=>onSelect(c.id)}
+                  className={`w-full text-left sidebar-link sidebar-child ${active === c.id ? "sidebar-link-active" : "text-on-primary/70"}`}>
+                  <Icon name={c.icon || "circle"} className="w-3.5 h-3.5"/>
+                  <span className="truncate">{c.label}</span>
+                </button>
+              ))}
+              {it.divider && <div className="my-2 border-t border-white/10 mx-4"></div>}
+            </Fragment>
+          );
+        })}
+        {isAdmin && (
+          <button onClick={onEditNav} className="w-full text-left sidebar-link text-secondary mt-3">
+            <Icon name="settings" className="w-4 h-4"/><span>サイドバー編集</span>
+          </button>
+        )}
+      </nav>
+      <div className="p-3 text-[10px] text-white/40 border-t border-white/10">© 編集局 Internal Portal</div>
+    </aside>
+  );
+};
+
+/* ============ Header ============ */
+const Header = ({ siteTitle, isAdmin, onToggleAdmin, onLogout, onSearch, onCreate, syncStatus, onSyncNow, syncEnabled }) => {
+  const [q, setQ] = useState("");
+  return (
+    <header className="fixed top-0 right-0 left-56 z-30 bg-white border-b border-outline-variant h-14 px-6 flex justify-between items-center no-print">
+      <div className="flex items-center gap-6">
+        <span className="font-bold text-primary text-base">{siteTitle}</span>
+        {syncEnabled && (
+          <button onClick={onSyncNow} title="今すぐ同期" className="flex items-center gap-1 text-xs text-on-surface-variant hover:text-primary">
+            <Icon name={syncStatus.icon} className={`w-3.5 h-3.5 ${syncStatus.spin?"animate-spin":""} ${syncStatus.color}`}/>
+            <span>{syncStatus.text}</span>
+          </button>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="relative hidden md:block">
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant w-4 h-4"/>
+          <input value={q} onChange={(e)=>{setQ(e.target.value); onSearch(e.target.value);}}
+            className="pl-9 pr-3 py-1.5 bg-surface-container-low border border-outline-variant rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-secondary w-60"
+            placeholder="キーワード検索"/>
+        </div>
+        {isAdmin && (
+          <button onClick={onCreate} className="bg-secondary text-on-secondary px-3 py-1.5 rounded-md text-sm font-bold flex items-center gap-1 hover:opacity-90">
+            <Icon name="plus" className="w-4 h-4"/>新規お知らせ
+          </button>
+        )}
+        {!isAdmin ? (
+          <button onClick={onToggleAdmin} className="border border-outline-variant px-3 py-1.5 rounded-md text-sm font-bold hover:bg-surface-container-low flex items-center gap-1">
+            <Icon name="lock" className="w-4 h-4"/>管理者ログイン
+          </button>
+        ) : (
+          <button onClick={onLogout} className="bg-primary text-on-primary px-3 py-1.5 rounded-md text-sm font-bold flex items-center gap-1">
+            <Icon name="log-out" className="w-4 h-4"/>ログアウト
+          </button>
+        )}
+      </div>
+    </header>
+  );
+};
+
+/* ============ Home Screen ============ */
+const HomeScreen = ({ data, setData, isAdmin, query, openCreate }) => {
+  const [editingIconId, setEditingIconId] = useState(null);
+  const updateField = (k, v) => setData(d => ({ ...d, [k]: v }));
+  const updateAnn = (id, next) => setData(d => ({ ...d, announcements: d.announcements.map(a => a.id === id ? next : a) }));
+  const deleteAnn = (id) => { if(confirm("削除しますか？")) setData(d => ({ ...d, announcements: d.announcements.filter(a => a.id !== id) })); };
+
+  const updateIcon = (id, next) => setData(d => ({ ...d, homeHeroIcons: (d.homeHeroIcons||[]).map(i => i.id===id ? next : i) }));
+  const deleteIcon = (id) => setData(d => ({ ...d, homeHeroIcons: (d.homeHeroIcons||[]).filter(i => i.id !== id) }));
+  const addIcon = () => {
+    const count = (data.homeHeroIcons||[]).length;
+    const newIcon = {
+      id: uid(),
+      label: "新規アイコン",
+      url: "",
+      image: null,
+      x: 8 + (count * 10) % 80,   // 順次ずらして重なり防止
+      y: 30 + (Math.floor(count / 8) * 25) % 60
+    };
+    setData(d => ({ ...d, homeHeroIcons: [...(d.homeHeroIcons||[]), newIcon] }));
+    setEditingIconId(newIcon.id); // 追加と同時に編集モーダルを起動
+  };
+  const editingIcon = (data.homeHeroIcons || []).find(i => i.id === editingIconId);
+
+  const filtered = useMemo(() => {
+    if (!query) return data.announcements || [];
+    const q = query.toLowerCase();
+    return (data.announcements || []).filter(a =>
+      (a.title||"").toLowerCase().includes(q) ||
+      (a.body||"").toLowerCase().includes(q) ||
+      (a.date||"").toLowerCase().includes(q));
+  }, [query, data.announcements]);
+
+  return (
+    <div>
+      <HeroBar
+        image={data.homeHeroImage}
+        imageStyle={data.homeHeroImageStyle}
+        title={data.homeHeroTitle}
+        isAdmin={isAdmin}
+        height={HERO_HEIGHT_HOME}
+        onChangeImage={(v)=>updateField("homeHeroImage", v)}
+        onChangeImageStyle={(v)=>updateField("homeHeroImageStyle", v)}
+        onChangeTitle={(v)=>updateField("homeHeroTitle", v)}
+      >
+        {(data.homeHeroIcons||[]).map(icon => (
+          <HeroIcon key={icon.id} icon={icon} isAdmin={isAdmin}
+            onEdit={()=>setEditingIconId(icon.id)}
+            onDelete={()=>deleteIcon(icon.id)}
+          />
+        ))}
+        {isAdmin && (
+          <button onClick={(e)=>{ e.stopPropagation(); addIcon(); }} type="button"
+            className="absolute bottom-3 left-3 z-30 bg-secondary text-on-secondary text-xs font-bold px-3 py-1.5 rounded shadow-lg flex items-center gap-1 hover:opacity-90">
+            <Icon name="plus" className="w-3.5 h-3.5"/>アイコン追加
+          </button>
+        )}
+      </HeroBar>
+
+      <Modal open={!!editingIcon} onClose={()=>setEditingIconId(null)} title="アイコン編集">
+        {editingIcon && (
+          <IconEditForm
+            icon={editingIcon}
+            onChange={(n)=>updateIcon(editingIcon.id, n)}
+            onDelete={()=>deleteIcon(editingIcon.id)}
+            onClose={()=>setEditingIconId(null)}
+          />
+        )}
+      </Modal>
+
+      <div className="px-6 md:px-10 py-8">
+        <div className="max-w-4xl mx-auto card p-6 mb-8">
+          <h2 className="text-center font-bold mb-3">
+            <InlineEditable value={data.noticeTitle} onChange={v=>updateField("noticeTitle",v)} isAdmin={isAdmin}/>
+          </h2>
+          <p className="text-sm text-on-surface-variant text-center">
+            <InlineEditable value={data.noticeBody} onChange={v=>updateField("noticeBody",v)} isAdmin={isAdmin} multiline/>
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold">最近の変更事項 <span className="text-on-surface-variant text-sm">({filtered.length}件)</span></h3>
+            {isAdmin && (
+              <button onClick={openCreate} className="bg-secondary text-on-secondary text-sm font-bold px-3 py-1.5 rounded flex items-center gap-1">
+                <Icon name="plus" className="w-4 h-4"/>追加
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filtered.map(a => (
+              <AnnouncementCard key={a.id} item={a} isAdmin={isAdmin}
+                onChange={(n)=>updateAnn(a.id, n)} onDelete={()=>deleteAnn(a.id)}/>
+            ))}
+            {filtered.length === 0 && <div className="col-span-full text-center text-on-surface-variant py-10">該当するお知らせがありません</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Page Screen ============ */
+const PageScreen = ({ pageId, data, setData, isAdmin, onSelect }) => {
+  const navItem = data.navItems.find(n => n.id === pageId);
+  const page = data.pages[pageId] || {};
+  const childItems = data.navItems.filter(n => n.parent === pageId);
+
+  const updatePage = (next) => setData(d => ({ ...d, pages: { ...d.pages, [pageId]: { ...(d.pages[pageId]||{}), ...next } } }));
+  const updateNavLabel = (label) => setData(d => ({
+    ...d, navItems: d.navItems.map(n => n.id === pageId ? { ...n, label } : n)
+  }));
+
+  const links = page.links || [];
+  const addLink = () => updatePage({ links: [...links, { id: uid(), label: "新しいリンク", url: "#" }] });
+  const updLink = (id, f) => updatePage({ links: links.map(l => l.id === id ? { ...l, ...f } : l) });
+  const delLink = (id) => updatePage({ links: links.filter(l => l.id !== id) });
+
+  const hasCategorized = !!page.linkCategories;
+  const enableCategories = () => updatePage({ linkCategories: [{ id: uid(), label: "新カテゴリ", links: [] }] });
+  const disableCategories = () => { if(confirm("カテゴリ表示を解除しますか？(データは保持されます)")) updatePage({ linkCategories: null }); };
+
+  return (
+    <div>
+      <HeroBar
+        image={page.heroImage}
+        imageStyle={page.heroImageStyle}
+        title={navItem?.label || pageId}
+        isAdmin={isAdmin}
+        height={HERO_HEIGHT_PAGE}
+        onChangeImage={(v)=>updatePage({ heroImage: v })}
+        onChangeImageStyle={(v)=>updatePage({ heroImageStyle: v })}
+        onChangeTitle={(v)=>updateNavLabel(v)}
+      />
+
+      <div className="px-6 md:px-10 py-8 max-w-6xl mx-auto space-y-6">
+        {/* Sub-page navigation cards (for parent pages) */}
+        {childItems.length > 0 && (
+          <section>
+            <h2 className="font-bold text-lg mb-4 border-l-4 border-secondary pl-3">サブページ</h2>
+            <SubPageCards children={childItems} onSelect={onSelect}/>
+          </section>
+        )}
+
+        {/* Description (Rich text) */}
+        <section>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-bold text-lg border-l-4 border-secondary pl-3">概要</h2>
+          </div>
+          <RichTextEditor html={page.descriptionHtml || (page.description ? "<p>"+(page.description.replace(/\n/g,"<br/>"))+"</p>" : "")}
+            onChange={(v)=>updatePage({ descriptionHtml: v })}
+            isAdmin={isAdmin}
+            placeholder="ページの説明・運用ルールなどを入力（書式設定可）"/>
+        </section>
+
+        {/* Categorized links */}
+        {hasCategorized ? (
+          <section>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-lg border-l-4 border-secondary pl-3">関連リンク（カテゴリ別）</h2>
+              {isAdmin && <button onClick={disableCategories} className="text-xs text-error border border-error rounded px-2 py-1">カテゴリ表示を解除</button>}
+            </div>
+            <CategorizedLinks categories={page.linkCategories} isAdmin={isAdmin} onChange={(v)=>updatePage({linkCategories: v})}/>
+          </section>
+        ) : (
+          <section>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-lg border-l-4 border-secondary pl-3">関連リンク</h2>
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <button onClick={addLink} className="text-sm bg-secondary text-on-secondary px-3 py-1 rounded font-bold flex items-center gap-1">
+                    <Icon name="plus" className="w-3 h-3"/>リンク追加
+                  </button>
+                  <button onClick={enableCategories} className="text-sm border border-outline-variant rounded px-3 py-1">カテゴリ表示にする</button>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {links.length === 0 && <div className="text-on-surface-variant text-sm">リンクは未登録です</div>}
+              {links.map(l => (
+                <div key={l.id} className="card p-3 flex items-center gap-2">
+                  <Icon name="external-link" className="w-4 h-4 text-secondary shrink-0"/>
+                  {isAdmin ? (
+                    <div className="flex-1 grid grid-cols-1 gap-1">
+                      <input value={l.label} onChange={e=>updLink(l.id,{label:e.target.value})} className="border border-outline-variant rounded px-2 py-1 text-sm" placeholder="リンク名"/>
+                      <input value={l.url} onChange={e=>updLink(l.id,{url:e.target.value})} className="border border-outline-variant rounded px-2 py-1 text-xs text-on-surface-variant" placeholder="URL"/>
+                    </div>
+                  ) : (
+                    <a href={l.url} target="_blank" rel="noreferrer" className="flex-1 text-sm hover:text-secondary truncate">{l.label}</a>
+                  )}
+                  {isAdmin && <button onClick={()=>delLink(l.id)} className="text-error p-1"><Icon name="trash-2" className="w-4 h-4"/></button>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Embed iframe */}
+        {(isAdmin || page.embedUrl) && (
+          <section>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="font-bold text-lg border-l-4 border-secondary pl-3">埋め込み（フォーム等）</h2>
+            </div>
+            <EmbedFrame url={page.embedUrl} isAdmin={isAdmin} onChange={(v)=>updatePage({embedUrl: v})}/>
+          </section>
+        )}
+
+        {/* Free canvas (images + textboxes) — タイトル非表示 */}
+        <section>
+          <FreeCanvas
+            items={[...(page.images||[]).map(i=>({...i, type:"image"})), ...(page.textBoxes||[]).map(t=>({...t, type:"textbox"}))]}
+            isAdmin={isAdmin}
+            onChange={(arr)=>{
+              const images = arr.filter(i=>i.type==="image").map(({type,...r})=>r);
+              const textBoxes = arr.filter(i=>i.type==="textbox").map(({type,...r})=>r);
+              updatePage({ images, textBoxes });
+            }}
+          />
+        </section>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Nav editor ============ */
+const NavEditor = ({ data, setData, onClose }) => {
+  const [items, setItems] = useState(data.navItems);
+  useEffect(()=>setItems(data.navItems),[data.navItems]);
+  const upd = (i, f) => setItems(arr => arr.map((x,idx)=> idx===i ? {...x,...f} : x));
+  const move = (i, dir) => {
+    const n=[...items]; const j=i+dir; if(j<0||j>=n.length) return;
+    [n[i],n[j]]=[n[j],n[i]]; setItems(n);
+  };
+  const del = (i) => { if(items[i].id==="home"){alert("ホームは削除できません");return;} setItems(arr=>arr.filter((_,idx)=>idx!==i)); };
+  const add = () => setItems(arr=>[...arr,{id:uid(),label:"新規メニュー",icon:"circle"}]);
+  const save = () => { setData(d=>({...d, navItems:items})); onClose(); };
+
+  const parentOptions = items.filter(it => !it.parent && it.id !== "home");
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-on-surface-variant mb-2">親メニューを設定すると入れ子表示されます。ラベル変更で黄色見出しも自動同期。</p>
+      {items.map((it, i) => (
+        <div key={it.id} className="flex items-center gap-2 border border-outline-variant rounded p-2 flex-wrap">
+          <Icon name={it.icon||"circle"} className="w-4 h-4 text-on-surface-variant"/>
+          <input value={it.label} onChange={e=>upd(i,{label:e.target.value})} className="flex-1 min-w-[140px] border border-outline-variant rounded px-2 py-1 text-sm"/>
+          <input value={it.icon||""} onChange={e=>upd(i,{icon:e.target.value})} placeholder="icon" className="w-20 border border-outline-variant rounded px-2 py-1 text-xs"/>
+          <select value={it.parent||""} onChange={e=>upd(i,{parent: e.target.value || undefined})} className="text-xs border border-outline-variant rounded px-2 py-1">
+            <option value="">親なし</option>
+            {parentOptions.filter(p => p.id !== it.id).map(p=> <option key={p.id} value={p.id}>↳ {p.label}</option>)}
+          </select>
+          <label className="text-xs flex items-center gap-1">
+            <input type="checkbox" checked={!!it.divider} onChange={e=>upd(i,{divider:e.target.checked})}/>区切り
+          </label>
+          <button onClick={()=>move(i,-1)} className="p-1"><Icon name="chevron-up" className="w-4 h-4"/></button>
+          <button onClick={()=>move(i, 1)} className="p-1"><Icon name="chevron-down" className="w-4 h-4"/></button>
+          <button onClick={()=>del(i)} className="p-1 text-error"><Icon name="trash-2" className="w-4 h-4"/></button>
+        </div>
+      ))}
+      <button onClick={add} className="text-sm border border-dashed border-outline-variant w-full py-2 rounded">+ 項目を追加</button>
+      <div className="flex justify-end gap-2 pt-3">
+        <button onClick={onClose} className="px-4 py-1.5 border border-outline-variant rounded text-sm">キャンセル</button>
+        <button onClick={save} className="px-4 py-1.5 bg-primary text-on-primary rounded text-sm font-bold">保存</button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Create announcement form ============ */
+const CreateAnnouncementForm = ({ onSave, onClose }) => {
+  const [date,setDate]=useState(""); const [title,setTitle]=useState(""); const [body,setBody]=useState("");
+  return (
+    <div className="space-y-3">
+      <div><label className="block text-xs font-bold mb-1">日付（例: 2/7）<span className="text-error">*</span></label>
+        <input value={date} onChange={e=>setDate(e.target.value)} className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+      <div><label className="block text-xs font-bold mb-1">タイトル<span className="text-error">*</span></label>
+        <input value={title} onChange={e=>setTitle(e.target.value)} className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+      <div><label className="block text-xs font-bold mb-1">本文</label>
+        <textarea value={body} onChange={e=>setBody(e.target.value)} rows={4} className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+      <div className="flex justify-end gap-2 pt-2">
+        <button onClick={onClose} className="px-4 py-1.5 border border-outline-variant rounded text-sm">キャンセル</button>
+        <button onClick={()=>{
+          if(!date.trim()||!title.trim()){alert("日付とタイトルは必須です");return;}
+          onSave({ id: uid(), date, title, body }); onClose();
+        }} className="px-4 py-1.5 bg-secondary text-on-secondary rounded text-sm font-bold">追加</button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Admin login ============ */
+const AdminLogin = ({ onSuccess, onClose }) => {
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  const correct = localStorage.getItem(ADMIN_PW_KEY) || ADMIN_DEFAULT_PW;
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-on-surface-variant">管理者パスワードを入力してください。<br/><span className="text-xs">（初期パスワード: <code className="bg-surface-container px-1 rounded">{ADMIN_DEFAULT_PW}</code>）</span></p>
+      <input type="password" value={pw} onChange={e=>setPw(e.target.value)}
+        onKeyDown={e=>{ if(e.key==="Enter"){ pw===correct ? onSuccess() : setErr("パスワードが違います"); } }}
+        className="w-full border border-outline-variant rounded p-2 text-sm" placeholder="パスワード"/>
+      {err && <div className="text-error text-xs">{err}</div>}
+      <div className="flex justify-end gap-2">
+        <button onClick={onClose} className="px-4 py-1.5 border border-outline-variant rounded text-sm">キャンセル</button>
+        <button onClick={()=> pw===correct ? onSuccess() : setErr("パスワードが違います")} className="px-4 py-1.5 bg-primary text-on-primary rounded text-sm font-bold">ログイン</button>
+      </div>
+    </div>
+  );
+};
+
+/* ============ Cloud sync settings ============ */
+const CloudSyncSettings = ({ syncCfg, setSyncCfg, data, setData, onClose }) => {
+  const [cfg, setCfg] = useState(syncCfg);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const save = () => { setSyncCfg(cfg); setMsg("設定を保存しました"); };
+  const test = async () => { setBusy(true); setMsg(""); try { await cloudPull(cfg); setMsg("✅ 接続成功"); } catch(e) { setMsg("❌ "+e.message); } finally { setBusy(false); } };
+  const pull = async () => { if (!confirm("クラウドからデータを取得します。現在のローカルデータは上書きされます。続行しますか？")) return; setBusy(true); setMsg(""); try { const remote = await cloudPull(cfg); setData(mergeDefaults(remote)); setMsg("✅ プル完了"); } catch(e) { setMsg("❌ "+e.message); } finally { setBusy(false); } };
+  const push = async () => { setBusy(true); setMsg(""); try { await cloudPush(cfg, { ...data, lastModified: Date.now() }); setMsg("✅ プッシュ完了"); } catch(e) { setMsg("❌ "+e.message); } finally { setBusy(false); } };
+  const create = async () => { if (!cfg.masterKey.trim()) { alert("Master Key を入力してください"); return; } setBusy(true); setMsg(""); try { const id = await cloudCreate(cfg.masterKey, { ...data, lastModified: Date.now() }); const next = { ...cfg, binId: id, enabled: true }; setCfg(next); setSyncCfg(next); setMsg(`✅ 新規Bin作成 (ID: ${id})`); } catch(e) { setMsg("❌ "+e.message); } finally { setBusy(false); } };
+
+  return (
+    <div className="space-y-4 text-sm">
+      <div className="bg-surface-container-low border border-outline-variant rounded p-3 text-xs space-y-1">
+        <p className="font-bold flex items-center gap-1"><Icon name="info" className="w-3.5 h-3.5"/>JSONBin.io 設定手順</p>
+        <ol className="list-decimal pl-5 space-y-0.5 text-on-surface-variant">
+          <li><a href="https://jsonbin.io" target="_blank" className="text-secondary underline">jsonbin.io</a> で無料アカウント作成</li>
+          <li>API Keys → Master Key をコピー</li>
+          <li>「新規Bin作成」ボタン押下で自動取得</li>
+          <li>有効化チェック → 保存。他端末でも同じ Master Key・Bin ID で共有可能</li>
+        </ol>
+      </div>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={cfg.enabled} onChange={e=>setCfg({...cfg, enabled:e.target.checked})}/><span className="font-bold">クラウド同期を有効化</span></label>
+      <div><label className="block text-xs font-bold mb-1">Master Key</label>
+        <input type="password" value={cfg.masterKey} onChange={e=>setCfg({...cfg, masterKey:e.target.value})} placeholder="$2a$10$..." className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+      <div><label className="block text-xs font-bold mb-1">Bin ID</label>
+        <div className="flex gap-2">
+          <input value={cfg.binId} onChange={e=>setCfg({...cfg, binId:e.target.value})} placeholder="例: 65ab12cdef34567890" className="flex-1 border border-outline-variant rounded p-2 text-sm"/>
+          <button onClick={create} disabled={busy} className="px-3 py-1 bg-secondary text-on-secondary rounded text-xs font-bold disabled:opacity-50">新規Bin作成</button>
+        </div></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div><label className="block text-xs font-bold mb-1">自動プッシュ間隔(秒)</label>
+          <input type="number" min="1" value={cfg.autoPushSec} onChange={e=>setCfg({...cfg, autoPushSec:Number(e.target.value)||3})} className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+        <div><label className="block text-xs font-bold mb-1">自動プル間隔(秒)</label>
+          <input type="number" min="0" value={cfg.autoPullSec} onChange={e=>setCfg({...cfg, autoPullSec:Number(e.target.value)||0})} className="w-full border border-outline-variant rounded p-2 text-sm"/></div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={save} disabled={busy} className="px-3 py-1.5 bg-primary text-on-primary rounded text-sm font-bold">設定を保存</button>
+        <button onClick={test} disabled={busy} className="px-3 py-1.5 border border-outline-variant rounded text-sm">接続テスト</button>
+        <button onClick={pull} disabled={busy} className="px-3 py-1.5 border border-outline-variant rounded text-sm">今すぐプル</button>
+        <button onClick={push} disabled={busy} className="px-3 py-1.5 border border-outline-variant rounded text-sm">今すぐプッシュ</button>
+      </div>
+      {msg && <div className={`text-xs p-2 rounded ${msg.startsWith("❌")?"bg-red-50 text-error":"bg-green-50 text-green-700"}`}>{msg}</div>}
+      <div className="flex justify-end pt-2"><button onClick={onClose} className="px-4 py-1.5 border border-outline-variant rounded text-sm">閉じる</button></div>
+    </div>
+  );
+};
+
+/* ============ Admin settings ============ */
+const AdminSettings = ({ onClose, onResetData, onChangePw, onExport, onImport, openCloud }) => {
+  const [pw1,setPw1]=useState(""); const [pw2,setPw2]=useState("");
+  const fileRef = useRef(null);
+  return (
+    <div className="space-y-5">
+      <div>
+        <h4 className="font-bold mb-2 text-sm flex items-center gap-2"><Icon name="cloud" className="w-4 h-4"/>クラウド同期</h4>
+        <p className="text-xs text-on-surface-variant mb-2">複数端末間でデータを共有します。</p>
+        <button onClick={openCloud} className="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-bold">同期設定を開く</button>
+      </div>
+      <hr/>
+      <div>
+        <h4 className="font-bold mb-2 text-sm">パスワード変更</h4>
+        <input type="password" placeholder="新しいパスワード" value={pw1} onChange={e=>setPw1(e.target.value)} className="w-full border border-outline-variant rounded p-2 text-sm mb-2"/>
+        <input type="password" placeholder="もう一度入力" value={pw2} onChange={e=>setPw2(e.target.value)} className="w-full border border-outline-variant rounded p-2 text-sm"/>
+        <button onClick={()=>{ if(!pw1||pw1!==pw2){alert("入力が一致しません");return;} onChangePw(pw1); alert("変更しました"); setPw1(""); setPw2(""); }} className="mt-2 bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-bold">変更する</button>
+      </div>
+      <hr/>
+      <div>
+        <h4 className="font-bold mb-2 text-sm">データのバックアップ／復元</h4>
+        <div className="flex gap-2">
+          <button onClick={onExport} className="border border-outline-variant px-3 py-1.5 rounded text-sm flex items-center gap-1"><Icon name="download" className="w-4 h-4"/>JSON書き出し</button>
+          <button onClick={()=>fileRef.current?.click()} className="border border-outline-variant px-3 py-1.5 rounded text-sm flex items-center gap-1"><Icon name="upload" className="w-4 h-4"/>JSON読み込み</button>
+          <input type="file" accept="application/json" ref={fileRef} className="hidden" onChange={(e)=>{
+            const f=e.target.files?.[0]; if(!f) return;
+            const r=new FileReader(); r.onload=()=>{ try{ onImport(JSON.parse(r.result)); alert("読み込みました"); }catch{alert("JSONが不正です");} };
+            r.readAsText(f); e.target.value="";
+          }}/>
+        </div>
+      </div>
+      <hr/>
+      <div>
+        <h4 className="font-bold mb-2 text-sm text-error">データ初期化</h4>
+        <button onClick={()=>{ if(confirm("初期データに戻します。よろしいですか？")) onResetData(); }} className="border border-error text-error px-3 py-1.5 rounded text-sm">初期データに戻す</button>
+      </div>
+      <div className="flex justify-end pt-2"><button onClick={onClose} className="px-4 py-1.5 bg-primary text-on-primary rounded text-sm font-bold">閉じる</button></div>
+    </div>
+  );
+};
+
+/* ============ App ============ */
+function App() {
+  const [data, setDataRaw] = useState(loadLocal());
+  const [active, setActive] = useState("home");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [query, setQuery] = useState("");
+  const [modal, setModal] = useState(null);
+  const [syncCfg, setSyncCfgState] = useState(loadSyncCfg());
+  const [syncStatus, setSyncStatus] = useState({ icon:"cloud-off", text:"未同期", color:"text-on-surface-variant", spin:false });
+
+  const dataRef = useRef(data);
+  const lastPushRef = useRef(0);
+  const lastLocalChangeRef = useRef(0);
+  const pushTimerRef = useRef(null);
+  const isApplyingRemoteRef = useRef(false);
+
+  const setData = useCallback((updater) => {
+    setDataRaw(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const stamped = isApplyingRemoteRef.current ? next : { ...next, lastModified: Date.now() };
+      if (!isApplyingRemoteRef.current) lastLocalChangeRef.current = Date.now();
+      dataRef.current = stamped;
+      return stamped;
+    });
+  }, []);
+
+  const setSyncCfg = useCallback((c) => { setSyncCfgState(c); saveSyncCfg(c); }, []);
+
+  useEffect(() => { saveLocal(data); }, [data]);
+
+  useEffect(() => {
+    if (!syncCfg.enabled || !syncCfg.binId || !syncCfg.masterKey) {
+      setSyncStatus({ icon:"cloud-off", text:"同期未設定", color:"text-on-surface-variant", spin:false });
+      return;
+    }
+    (async () => {
+      setSyncStatus({ icon:"refresh-cw", text:"プル中...", color:"text-secondary", spin:true });
+      try {
+        const remote = await cloudPull(syncCfg);
+        const merged = mergeDefaults(remote);
+        if ((remote.lastModified||0) >= (dataRef.current.lastModified||0)) {
+          isApplyingRemoteRef.current = true; setData(merged); isApplyingRemoteRef.current = false;
+          setSyncStatus({ icon:"cloud-check", text:"同期済 "+new Date().toLocaleTimeString(), color:"text-green-600", spin:false });
+        } else {
+          setSyncStatus({ icon:"cloud-check", text:"ローカルが新", color:"text-secondary", spin:false });
+        }
+      } catch (e) {
+        setSyncStatus({ icon:"cloud-off", text:"プル失敗", color:"text-error", spin:false });
+      }
+    })();
+  }, [syncCfg.enabled, syncCfg.binId, syncCfg.masterKey]);
+
+  useEffect(() => {
+    if (!syncCfg.enabled || !syncCfg.binId || !syncCfg.masterKey) return;
+    if (isApplyingRemoteRef.current) return;
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    const interval = (syncCfg.autoPushSec || 3) * 1000;
+    pushTimerRef.current = setTimeout(async () => {
+      if (lastLocalChangeRef.current <= lastPushRef.current) return;
+      setSyncStatus({ icon:"refresh-cw", text:"プッシュ中...", color:"text-secondary", spin:true });
+      try {
+        await cloudPush(syncCfg, dataRef.current);
+        lastPushRef.current = Date.now();
+        setSyncStatus({ icon:"cloud-check", text:"同期済 "+new Date().toLocaleTimeString(), color:"text-green-600", spin:false });
+      } catch {
+        setSyncStatus({ icon:"cloud-off", text:"プッシュ失敗", color:"text-error", spin:false });
+      }
+    }, interval);
+    return () => clearTimeout(pushTimerRef.current);
+  }, [data, syncCfg]);
+
+  useEffect(() => {
+    if (!syncCfg.enabled || !syncCfg.binId || !syncCfg.masterKey) return;
+    if (!syncCfg.autoPullSec || syncCfg.autoPullSec <= 0) return;
+    const id = setInterval(async () => {
+      try {
+        const remote = await cloudPull(syncCfg);
+        if ((remote.lastModified||0) > (dataRef.current.lastModified||0)) {
+          isApplyingRemoteRef.current = true; setData(mergeDefaults(remote)); isApplyingRemoteRef.current = false;
+          setSyncStatus({ icon:"cloud-check", text:"更新を取得 "+new Date().toLocaleTimeString(), color:"text-green-600", spin:false });
+        }
+      } catch {}
+    }, syncCfg.autoPullSec * 1000);
+    return () => clearInterval(id);
+  }, [syncCfg]);
+
+  const onSyncNow = async () => {
+    setSyncStatus({ icon:"refresh-cw", text:"同期中...", color:"text-secondary", spin:true });
+    try {
+      const remote = await cloudPull(syncCfg);
+      if ((remote.lastModified||0) > (dataRef.current.lastModified||0)) {
+        isApplyingRemoteRef.current = true; setData(mergeDefaults(remote)); isApplyingRemoteRef.current = false;
+      } else {
+        await cloudPush(syncCfg, dataRef.current); lastPushRef.current = Date.now();
+      }
+      setSyncStatus({ icon:"cloud-check", text:"同期済 "+new Date().toLocaleTimeString(), color:"text-green-600", spin:false });
+    } catch (e) {
+      setSyncStatus({ icon:"cloud-off", text:"失敗: "+e.message, color:"text-error", spin:false });
+    }
+  };
+
+  const onCreate = (item) => setData(d => ({ ...d, announcements: [item, ...(d.announcements||[])] }));
+
+  return (
+    <div className="min-h-screen">
+      <Sidebar items={data.navItems} active={active} onSelect={setActive} isAdmin={isAdmin} onEditNav={()=>setModal("nav")}/>
+      <Header siteTitle={data.siteTitle} isAdmin={isAdmin}
+        onToggleAdmin={()=>setModal("login")} onLogout={()=>setIsAdmin(false)}
+        onSearch={setQuery} onCreate={()=>setModal("create")}
+        syncStatus={syncStatus} onSyncNow={onSyncNow} syncEnabled={syncCfg.enabled}/>
+
+      <main className="ml-56 mt-14 min-h-[calc(100vh-3.5rem)]">
+        {active === "home"
+          ? <HomeScreen data={data} setData={setData} isAdmin={isAdmin} query={query} openCreate={()=>setModal("create")}/>
+          : <PageScreen pageId={active} data={data} setData={setData} isAdmin={isAdmin} onSelect={setActive}/>}
+      </main>
+
+      {isAdmin && (
+        <button onClick={()=>setModal("settings")} className="fixed bottom-6 right-6 bg-primary text-on-primary rounded-full w-12 h-12 shadow-lg flex items-center justify-center hover:opacity-90 z-40" title="管理者設定">
+          <Icon name="settings" className="w-5 h-5"/>
+        </button>
+      )}
+
+      <Modal open={modal==="login"} onClose={()=>setModal(null)} title="管理者ログイン" size="sm">
+        <AdminLogin onClose={()=>setModal(null)} onSuccess={()=>{ setIsAdmin(true); setModal(null); }}/>
+      </Modal>
+      <Modal open={modal==="create"} onClose={()=>setModal(null)} title="お知らせを新規作成">
+        <CreateAnnouncementForm onClose={()=>setModal(null)} onSave={onCreate}/>
+      </Modal>
+      <Modal open={modal==="nav"} onClose={()=>setModal(null)} title="サイドバー編集" size="lg">
+        <NavEditor data={data} setData={setData} onClose={()=>setModal(null)}/>
+      </Modal>
+      <Modal open={modal==="settings"} onClose={()=>setModal(null)} title="管理者設定" size="md">
+        <AdminSettings onClose={()=>setModal(null)} openCloud={()=>setModal("cloud")}
+          onResetData={()=>{ setData(JSON.parse(JSON.stringify(DEFAULT_DATA))); setModal(null); }}
+          onChangePw={(pw)=>localStorage.setItem(ADMIN_PW_KEY, pw)}
+          onExport={()=>{ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="portal-backup.json"; a.click(); URL.revokeObjectURL(url); }}
+          onImport={(d)=>setData(mergeDefaults(d))}/>
+      </Modal>
+      <Modal open={modal==="cloud"} onClose={()=>setModal("settings")} title="クラウド同期設定" size="lg">
+        <CloudSyncSettings syncCfg={syncCfg} setSyncCfg={setSyncCfg} data={data} setData={setData} onClose={()=>setModal("settings")}/>
+      </Modal>
+    </div>
+  );
+}
+
+/* ============ Error boundary ============ */
+class ErrorBoundary extends React.Component {
+  constructor(p){ super(p); this.state = { error: null, info: null }; }
+  static getDerivedStateFromError(error){ return { error, info: null }; }
+  componentDidCatch(error, info){ this.setState({ error, info }); console.error("[ErrorBoundary]", error, info); }
+  render(){
+    if (this.state.error) {
+      return (
+        <div className="p-8 max-w-3xl mx-auto">
+          <h2 className="text-xl font-bold text-error mb-2">画面表示エラー</h2>
+          <pre className="bg-surface-container p-4 rounded text-xs whitespace-pre-wrap break-words mb-4">{String(this.state.error?.message || this.state.error)}{this.state.info?.componentStack ? "\n\n" + this.state.info.componentStack : ""}</pre>
+          <div className="flex gap-2">
+            <button onClick={()=>this.setState({error:null, info:null})} className="px-4 py-2 bg-primary text-on-primary rounded text-sm font-bold">再試行</button>
+            <button onClick={()=>{ localStorage.removeItem(STORAGE_KEY); location.reload(); }} className="px-4 py-2 border border-error text-error rounded text-sm font-bold">ローカルデータを破棄して再読込</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App/></ErrorBoundary>);
+</script>
+</body>
+</html>
