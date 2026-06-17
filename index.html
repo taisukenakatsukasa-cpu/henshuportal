@@ -77,7 +77,50 @@
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root">
+  <div id="boot-status" style="padding:2rem;font-family:'Hiragino Sans','Yu Gothic',sans-serif;color:#6b6358;">
+    <p style="font-size:14px;">読み込み中… (5MB のデータ読み込みに10〜30秒かかる場合があります)</p>
+    <p id="boot-step" style="font-size:11px;color:#999;margin-top:8px;">step: html-loaded</p>
+  </div>
+</div>
+
+<script>
+// 画面上に直接エラーを表示する仕組み (F12 が使えない環境向け)
+(function(){
+  var setStep = function(s){ var el = document.getElementById('boot-step'); if(el) el.textContent = 'step: ' + s; };
+  setStep('inline-script');
+  window.addEventListener('error', function(e){
+    var root = document.getElementById('root');
+    if(!root) return;
+    root.innerHTML = '<div style="padding:2rem;font-family:monospace;color:#b3261e;background:#fef2f2;border:2px solid #b3261e;margin:1rem;border-radius:8px;max-width:900px;">'
+      + '<h2 style="margin:0 0 1rem;font-size:16px;">⚠️ JS Error</h2>'
+      + '<div><b>Message:</b> ' + (e.message || '(no message)') + '</div>'
+      + '<div><b>Source:</b> ' + (e.filename || '(no file)') + ':' + (e.lineno||'?') + ':' + (e.colno||'?') + '</div>'
+      + '<pre style="margin-top:1rem;white-space:pre-wrap;font-size:11px;">' + (e.error && e.error.stack ? e.error.stack : '(no stack)') + '</pre>'
+      + '<p style="font-size:11px;color:#666;margin-top:1rem;">この内容をスクショして開発者へ送ってください。</p>'
+      + '</div>';
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var root = document.getElementById('root');
+    if(!root) return;
+    root.innerHTML = '<div style="padding:2rem;font-family:monospace;color:#b3261e;background:#fef2f2;border:2px solid #b3261e;margin:1rem;border-radius:8px;">'
+      + '<h2 style="margin:0 0 1rem;font-size:16px;">⚠️ Unhandled Promise Rejection</h2>'
+      + '<div>' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)) + '</div>'
+      + '</div>';
+  });
+  // 3秒経ってもReactが起動しなかったら進捗を出す
+  setTimeout(function(){
+    if (document.getElementById('boot-status')) {
+      setStep('3sec-elapsed: defaultData=' + (typeof window.__DEFAULT_PORTAL_DATA__ !== 'undefined' ? 'loaded(' + Object.keys(window.__DEFAULT_PORTAL_DATA__||{}).length + ' keys)' : 'NOT LOADED') + ' react=' + (typeof window.React !== 'undefined' ? 'loaded' : 'NOT LOADED') + ' Babel=' + (typeof window.Babel !== 'undefined' ? 'loaded' : 'NOT LOADED'));
+    }
+  }, 3000);
+  setTimeout(function(){
+    if (document.getElementById('boot-status')) {
+      setStep('15sec-elapsed: defaultData=' + (typeof window.__DEFAULT_PORTAL_DATA__ !== 'undefined' ? 'loaded' : 'NOT LOADED') + ' react=' + (typeof window.React !== 'undefined' ? 'loaded' : 'NOT LOADED') + ' Babel=' + (typeof window.Babel !== 'undefined' ? 'loaded' : 'NOT LOADED'));
+    }
+  }, 15000);
+})();
+</script>
 
 <script type="text/babel" data-presets="env,react">
 const { useState, useEffect, useRef, useMemo, Fragment, useCallback } = React;
