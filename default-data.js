@@ -130,20 +130,7 @@ window.__DEFAULT_PORTAL_DATA__ = {
       "icon": "message-square-plus"
     }
   ],
-  "announcements": [
-    {
-      "id": "j685ka3",
-      "date": "2026/06/15",
-      "title": "　　　　　【GMC：座席内線表＜26/6/16～＞】",
-      "body": "https://gentoshamc.poweregg.net/pe4j/KBB/KBB1102d.jsf?cid=12"
-    },
-    {
-      "id": "103ve04",
-      "date": "2026/06/16",
-      "title": "　　　　令和8年6月16日付　組織図更新に関して",
-      "body": "https://gentoshamc.poweregg.net/pe4j/KBB/KBB1102d.jsf?BBSContentID=27943"
-    }
-  ],
+  "announcements": [],
   "pages": {
     "shanai": {
       "description": "契約内容変更、解約などの場合には覚書を交わす必要があります。\n\nまた、外注費が契約当時のものから変更になった場合は稟議を回す必要があります。\n\nいずれも経営企画から稟議申請しますので、経営企画に依頼してください。\n\n\n誰が経営企画局に依頼するか\n\n・編集への引継ぎ前、引継ぎ中…営業担当\n\n・編集へ引継ぎ後（キックオフ以降）…編集担当\n\n・サポートが対応中の案件…サポート担当\n\n基本の対応手順 \n\n①覚書ドラフト作成依頼\n\n　【～No.22501】紙の帳票に金額変更に伴う必要事項を記入して、柘さんに回覧＋メールも\n\n　【No.22502～】メールで稟議依頼　文例フォーマットはこちら\n\n②経企作成のドラフトを著者確認→経企に返信\n\n③経企が稟議申請\n\n④本紙作成→著者送付\n\n　クラウドサインなら経企から、紙なら依頼者から\n\n⑤回収次第、経企が手続き　依頼者は刊行予定表や制作企画明細を更新経費精算・休暇申請などの事務手続きをまとめています。",
@@ -1177,7 +1164,7 @@ window.__DEFAULT_PORTAL_DATA__ = {
       "links": []
     }
   },
-  "lastModified": 1781589846361,
+  "lastModified": 1779431808973,
   "homeHeroImageStyle": {
     "posX": 37,
     "posY": 27,
